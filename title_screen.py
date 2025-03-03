@@ -1,14 +1,12 @@
 import pygame
 import time
 
-from constants import (
-    BLOCK_SIZE,
-    GAP_SIZE,
-    TETROMINOES,
-    GameState
-)
+from constants import TETROMINOES, GameState
 
 from tools import draw_tetromino, rotate_shape, handle_events
+
+TITLE_SCREEN_BLOCK_SIZE = 16
+GAP_SIZE = 20
 
 
 def run(screen):
@@ -38,12 +36,14 @@ def run(screen):
         screen.blit(title, title_rect)
         screen.blit(subtitle, subtitle_rect)
 
-        total_width = len(tetrominoes) * (BLOCK_SIZE + GAP_SIZE * 3)
+        total_width = len(tetrominoes) * (TITLE_SCREEN_BLOCK_SIZE + GAP_SIZE * 3)
         x_offset = title_rect.centerx - total_width // 2
-        y_offset = title_rect.bottom + 20
+        y_offset = title_rect.bottom + GAP_SIZE
         for shape, color in tetrominoes:
-            draw_tetromino(screen, shape, color, (x_offset, y_offset))
-            x_offset += BLOCK_SIZE + GAP_SIZE * 3
+            draw_tetromino(
+                screen, shape, color, (x_offset, y_offset), TITLE_SCREEN_BLOCK_SIZE
+            )
+            x_offset += TITLE_SCREEN_BLOCK_SIZE + GAP_SIZE * 3
 
         current_time = time.time()
         if current_time - last_update_time > 0.1:
@@ -53,16 +53,5 @@ def run(screen):
             )
             current_tetromino = (current_tetromino + 1) % len(tetrominoes)
             last_update_time = current_time
-
-        screen.fill((0, 0, 0))
-        screen.blit(title, title_rect)
-        screen.blit(subtitle, subtitle_rect)
-
-        total_width = len(tetrominoes) * (BLOCK_SIZE + GAP_SIZE * 3)
-        x_offset = title_rect.centerx - total_width // 2
-        y_offset = title_rect.bottom + 20
-        for shape, color in tetrominoes:
-            draw_tetromino(screen, shape, color, (x_offset, y_offset))
-            x_offset += BLOCK_SIZE + GAP_SIZE * 3
 
         pygame.display.flip()

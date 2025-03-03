@@ -1,20 +1,19 @@
 import pygame
-from constants import BLOCK_SIZE, GameState
+from constants import BLOCK_SIZE, OUTLINE_COLOR, GameState
 
 
-def draw_tetromino(screen, shape, color, position):
-    outline_color = (0, 0, 139)  # Dark blue color
+def draw_tetromino(screen, shape, color, position, block_size=BLOCK_SIZE):
     for y, row in enumerate(shape):
         for x, cell in enumerate(row):
             if cell:
                 rect = pygame.Rect(
-                    position[0] + x * BLOCK_SIZE,
-                    position[1] + y * BLOCK_SIZE,
-                    BLOCK_SIZE,
-                    BLOCK_SIZE,
+                    position[0] + x * block_size,
+                    position[1] + y * block_size,
+                    block_size,
+                    block_size,
                 )
                 pygame.draw.rect(screen, color, rect)
-                pygame.draw.rect(screen, outline_color, rect, 1)  # Draw outline
+                pygame.draw.rect(screen, OUTLINE_COLOR, rect, 1)  # Draw outline
 
 
 def rotate_shape(shape):
