@@ -2,6 +2,7 @@ import pygame
 from constants import GameState
 from tools import handle_events
 
+
 def run(screen):
     font = pygame.font.Font(None, 74)
     text = font.render("GAME OVER", True, (255, 255, 255))
@@ -20,4 +21,3 @@ def run(screen):
         # Draw the text
         screen.blit(text, text_rect)
         pygame.display.flip()
-

@@ -6,7 +6,7 @@ from tools import draw_tetromino, handle_events, rotate_shape
 
 WELL_DEPTH = 20
 WELL_WIDTH = 10
-FALL_SPEED = 0.5
+INTERVAL = 0.5
 
 
 def draw_well(screen, well):
@@ -70,11 +70,61 @@ def can_move(well, tetromino, position):
     return True
 
 
+def find_full_rows(well):
+    full_rows = [index for index, row in enumerate(well) if all(row)]
+    for row_index in full_rows:
+        # Paint the row in white for one update
+        well[row_index] = [(255, 255, 255)] * WELL_WIDTH
+    return full_rows  # Return the full rows to be cleared
+
+
+def clear_full_rows(screen, well, full_rows):
+    screen.fill((0, 0, 0))
+    draw_well(screen, well)
+    pygame.display.flip()
+    pygame.time.wait(300)
+    remove_full_rows(well, full_rows)
+
+
+def remove_full_rows(well, full_rows):
+    for row_index in full_rows:
+        del well[row_index]
+        well.insert(0, [0] * WELL_WIDTH)
+
+
+def handle_controls(event, tetromino_position, current_tetromino, well):
+    new_position = list(tetromino_position)
+    restart_loop = False
+    if event.key == pygame.K_LEFT:
+        new_position[1] -= 1
+    elif event.key == pygame.K_RIGHT:
+        new_position[1] += 1
+    elif event.key == pygame.K_SPACE:
+        new_position = drop_tetromino(well, current_tetromino, tetromino_position)
+    elif event.key == pygame.K_DOWN:
+        new_position[0] += 1
+    elif event.key == pygame.K_UP:
+        rotated_tetromino = rotate_shape(current_tetromino[0])
+        if can_move(well, rotated_tetromino, tetromino_position):
+            current_tetromino = (rotated_tetromino, current_tetromino[1])
+            restart_loop = True
+
+    if can_move(well, current_tetromino[0], new_position):
+        tetromino_position = new_position
+
+    return {
+        "new_position": new_position,
+        "tetromino_position": tetromino_position,
+        "current_tetromino": current_tetromino,
+        "restart_loop": restart_loop,
+    }
+
+
 def run(screen):
     game_state = GameState.PLAY
 
     # Initialize the well
-    well = [[0 for _ in range(WELL_WIDTH)] for _ in range(WELL_DEPTH)]
+    well = [[0] * WELL_WIDTH for _ in range(WELL_DEPTH)]
 
     current_tetromino = random.choice(TETROMINOES)
     tetromino_position = [0, 4]  # Starting position at the top center
@@ -87,29 +137,19 @@ def run(screen):
             if game_state != GameState.PLAY:
                 return game_state
             if event.type == pygame.KEYDOWN:
-                new_position = list(tetromino_position)
-                if event.key == pygame.K_a:
-                    new_position[1] -= 1
-                elif event.key == pygame.K_d:
-                    new_position[1] += 1
-                elif event.key == pygame.K_SPACE:
-                    new_position = drop_tetromino(
-                        well, current_tetromino, tetromino_position
-                    )
-                elif event.key == pygame.K_s:
-                    new_position[0] += 1
-                elif event.key == pygame.K_w:
-                    rotated_tetromino = rotate_shape(current_tetromino[0])
-                    if can_move(well, rotated_tetromino, tetromino_position):
-                        current_tetromino = (rotated_tetromino, current_tetromino[1])
-                        continue
-
-                if can_move(well, current_tetromino[0], new_position):
-                    tetromino_position = new_position
+                result = handle_controls(
+                    event, tetromino_position, current_tetromino, well
+                )
+                new_position = result["new_position"]
+                tetromino_position = result["tetromino_position"]
+                current_tetromino = result["current_tetromino"]
+                restart_loop = result["restart_loop"]
+                if restart_loop:
+                    continue
 
         current_time = time.time()
         if (
-            current_time - last_update_time > FALL_SPEED
+            current_time - last_update_time > INTERVAL
         ):  # Move tetromino down after interval
             new_position = list(tetromino_position)
             new_position[0] += 1
@@ -123,6 +163,11 @@ def run(screen):
                             well[tetromino_position[0] + y][
                                 tetromino_position[1] + x
                             ] = current_tetromino[1]
+
+                # Check for full rows
+                full_rows = find_full_rows(well)
+                if full_rows:
+                    clear_full_rows(screen, well, full_rows)
 
                 # Choose the next tetromino
                 current_tetromino = random.choice(TETROMINOES)
