@@ -24,6 +24,8 @@ def handle_events(event, game_state):
     if event.type == pygame.QUIT:
         return GameState.QUIT
     elif event.type == pygame.KEYDOWN:
+        if game_state == GameState.GAME_OVER:
+            return GameState.QUIT
         if event.key == pygame.K_q:
             return GameState.QUIT
         elif event.key == pygame.K_SPACE and game_state == GameState.TITLE_SCREEN:

@@ -81,7 +81,7 @@ def run(screen):
 
     last_update_time = time.time()
 
-    while game_state == GameState.PLAY:
+    while True:
         for event in pygame.event.get():
             game_state = handle_events(event, game_state)
             if game_state != GameState.PLAY:
@@ -127,6 +127,10 @@ def run(screen):
                 # Choose the next tetromino
                 current_tetromino = random.choice(TETROMINOES)
                 tetromino_position = [0, 4]
+
+                # Check if the new tetromino can fit in the well
+                if not can_move(well, current_tetromino[0], tetromino_position):
+                    return GameState.GAME_OVER
 
             last_update_time = current_time
 

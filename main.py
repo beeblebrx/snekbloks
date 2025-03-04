@@ -3,6 +3,7 @@ import sys
 import title_screen
 from constants import GameState
 import play
+import game_over
 
 
 def quit_game():
@@ -24,8 +25,7 @@ def main():
             case GameState.PLAY:
                 game_state = play.run(screen)
             case GameState.GAME_OVER:
-                # Placeholder for game over state logic
-                pass
+                game_state = game_over.run(screen)
             case GameState.SCORE:
                 # Placeholder for score state logic
                 pass
