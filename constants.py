@@ -1,16 +1,16 @@
 from enum import Enum
 
-BLOCK_SIZE = 28
-OUTLINE_COLOR = (0, 0, 139)  # Dark blue
 
-
-class GameState(Enum):
+class Phase(Enum):
     TITLE_SCREEN = 1
     PLAY = 2
     GAME_OVER = 3
     SCORE = 4
     QUIT = 5
 
+
+BLOCK_SIZE = 28
+OUTLINE_COLOR = (0, 0, 139)  # Dark blue
 
 TETROMINOES = [
     ([[1, 1, 1], [0, 1, 0]], (255, 165, 0)),  # T

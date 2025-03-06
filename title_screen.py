@@ -1,17 +1,14 @@
 import pygame
 import time
 
-from constants import TETROMINOES, GameState
-
+from constants import TETROMINOES, Phase
 from tools import draw_tetromino, rotate_shape, handle_events
 
 TITLE_SCREEN_BLOCK_SIZE = 16
 GAP_SIZE = 20
 
 
-def run(screen):
-    game_state = GameState.TITLE_SCREEN
-
+def run(screen, game_phase):
     font = pygame.font.Font(None, 36)
     title = font.render("SNEK BLOKS", True, (255, 255, 255))
     title_rect = title.get_rect(center=(400, 300))
@@ -28,9 +25,9 @@ def run(screen):
 
     while True:
         for event in pygame.event.get():
-            game_state = handle_events(event, game_state)
-            if game_state != GameState.TITLE_SCREEN:
-                return game_state
+            game_phase = handle_events(event, game_phase)
+            if game_phase != Phase.TITLE_SCREEN:
+                return game_phase
 
         screen.fill((0, 0, 0))
         screen.blit(title, title_rect)

@@ -1,7 +1,7 @@
 import pygame
 import random
 import time
-from constants import OUTLINE_COLOR, GameState, TETROMINOES, BLOCK_SIZE
+from constants import OUTLINE_COLOR, TETROMINOES, BLOCK_SIZE, Phase
 from tools import draw_tetromino, handle_events, rotate_shape
 
 WELL_DEPTH = 20
@@ -77,10 +77,18 @@ def find_full_rows(well):
         well[row_index] = [(255, 255, 255)] * WELL_WIDTH
     return full_rows  # Return the full rows to be cleared
 
+def draw_score(screen, score):
+    font = pygame.font.Font(None, 36)
+    score_text = font.render(f"Score: {score}", True, (255, 255, 255))
+    screen.blit(score_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 10))
 
-def clear_full_rows(screen, well, full_rows):
+def draw_level(screen, well, game_state):
     screen.fill((0, 0, 0))
     draw_well(screen, well)
+    draw_score(screen, game_state.score)
+
+def clear_full_rows(screen, well, full_rows, game_state):
+    draw_level(screen, well, game_state)
     pygame.display.flip()
     pygame.time.wait(300)
     remove_full_rows(well, full_rows)
@@ -119,10 +127,7 @@ def handle_controls(event, tetromino_position, current_tetromino, well):
         "restart_loop": restart_loop,
     }
 
-
-def run(screen):
-    game_state = GameState.PLAY
-
+def run(screen, game_state):
     # Initialize the well
     well = [[0] * WELL_WIDTH for _ in range(WELL_DEPTH)]
 
@@ -133,9 +138,9 @@ def run(screen):
 
     while True:
         for event in pygame.event.get():
-            game_state = handle_events(event, game_state)
-            if game_state != GameState.PLAY:
-                return game_state
+            game_phase = handle_events(event, game_state.phase)
+            if game_phase != Phase.PLAY:
+                return game_phase
             if event.type == pygame.KEYDOWN:
                 result = handle_controls(
                     event, tetromino_position, current_tetromino, well
@@ -167,7 +172,8 @@ def run(screen):
                 # Check for full rows
                 full_rows = find_full_rows(well)
                 if full_rows:
-                    clear_full_rows(screen, well, full_rows)
+                    clear_full_rows(screen, well, full_rows, game_state)
+                    game_state.add_score_by_lines(len(full_rows))
 
                 # Choose the next tetromino
                 current_tetromino = random.choice(TETROMINOES)
@@ -175,13 +181,11 @@ def run(screen):
 
                 # Check if the new tetromino can fit in the well
                 if not can_move(well, current_tetromino[0], tetromino_position):
-                    return GameState.GAME_OVER
+                    return Phase.GAME_OVER
 
             last_update_time = current_time
 
-        screen.fill((0, 0, 0))
-
-        draw_well(screen, well)
+        draw_level(screen, well, game_state)
 
         # Draw the current tetromino
         draw_tetromino(

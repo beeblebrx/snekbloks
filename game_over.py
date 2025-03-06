@@ -1,5 +1,5 @@
 import pygame
-from constants import GameState
+from constants import Phase
 from tools import handle_events
 
 
@@ -13,8 +13,8 @@ def run(screen):
 
     while True:
         for event in pygame.event.get():
-            if handle_events(event, GameState.GAME_OVER) != GameState.GAME_OVER:
-                return GameState.TITLE_SCREEN
+            if handle_events(event, Phase.GAME_OVER) != Phase.GAME_OVER:
+                return Phase.TITLE_SCREEN
 
         # Draw the background box
         pygame.draw.rect(screen, (0, 0, 0), background_rect)

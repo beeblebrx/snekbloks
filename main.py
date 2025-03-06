@@ -1,8 +1,9 @@
 import pygame
 import sys
-import title_screen
-from constants import GameState
+from constants import Phase
+from game_state import GameState
 import play
+import title_screen
 import game_over
 
 
@@ -16,20 +17,19 @@ def main():
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Snek Bloks")
 
-    game_state = GameState.TITLE_SCREEN
-
+    game_state = GameState()
     while True:
-        match game_state:
-            case GameState.TITLE_SCREEN:
-                game_state = title_screen.run(screen)
-            case GameState.PLAY:
-                game_state = play.run(screen)
-            case GameState.GAME_OVER:
-                game_state = game_over.run(screen)
-            case GameState.SCORE:
+        match game_state.phase:
+            case Phase.TITLE_SCREEN:
+                game_state.phase = title_screen.run(screen, game_state.phase)
+            case Phase.PLAY:
+                game_state.phase = play.run(screen, game_state)
+            case Phase.GAME_OVER:
+                game_state.phase = game_over.run(screen)
+            case Phase.SCORE:
                 # Placeholder for score state logic
                 pass
-            case GameState.QUIT:
+            case Phase.QUIT:
                 quit_game()
 
 

@@ -1,5 +1,5 @@
 import pygame
-from constants import BLOCK_SIZE, OUTLINE_COLOR, GameState
+from constants import BLOCK_SIZE, OUTLINE_COLOR, Phase
 
 
 def draw_tetromino(screen, shape, color, position, block_size=BLOCK_SIZE):
@@ -20,14 +20,14 @@ def rotate_shape(shape):
     return [list(row) for row in zip(*shape[::-1])]
 
 
-def handle_events(event, game_state):
+def handle_events(event, game_phase):
     if event.type == pygame.QUIT:
-        return GameState.QUIT
+        return Phase.QUIT
     elif event.type == pygame.KEYDOWN:
-        if game_state == GameState.GAME_OVER:
-            return GameState.QUIT
+        if game_phase == Phase.GAME_OVER:
+            return Phase.QUIT
         if event.key == pygame.K_q:
-            return GameState.QUIT
-        elif event.key == pygame.K_SPACE and game_state == GameState.TITLE_SCREEN:
-            return GameState.PLAY
-    return game_state
+            return Phase.QUIT
+        elif event.key == pygame.K_SPACE and game_phase == Phase.TITLE_SCREEN:
+            return Phase.PLAY
+    return game_phase
