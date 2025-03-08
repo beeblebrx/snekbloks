@@ -3,13 +3,15 @@ import random
 import time
 from constants import OUTLINE_COLOR, TETROMINOES, BLOCK_SIZE, Phase
 from tools import draw_tetromino, handle_events, rotate_shape
+from screen import Screen
 
 WELL_DEPTH = 20
 WELL_WIDTH = 10
 INTERVAL = 0.5
 
 
-def draw_well(screen, well):
+def draw_well(well):
+    screen = Screen.getScreen()
     well_color = (173, 216, 230)  # Light blue color
     # Draw the well boundaries
     for y in range(WELL_DEPTH):
@@ -77,18 +79,32 @@ def find_full_rows(well):
         well[row_index] = [(255, 255, 255)] * WELL_WIDTH
     return full_rows  # Return the full rows to be cleared
 
-def draw_score(screen, score):
+
+def draw_score(score):
+    screen = Screen.getScreen()
     font = pygame.font.Font(None, 36)
     score_text = font.render(f"Score: {score}", True, (255, 255, 255))
     screen.blit(score_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 10))
 
-def draw_level(screen, well, game_state):
-    screen.fill((0, 0, 0))
-    draw_well(screen, well)
-    draw_score(screen, game_state.score)
 
-def clear_full_rows(screen, well, full_rows, game_state):
-    draw_level(screen, well, game_state)
+def draw_combo_bonus(combo_count):
+    screen = Screen.getScreen()
+    if combo_count > 1:
+        font = pygame.font.Font(None, 36)
+        combo_text = font.render("COMBO BONUS!", True, (255, 0, 0))
+        screen.blit(combo_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 50))
+
+
+def draw_level(well, game_state, combo_count):
+    screen = Screen.getScreen()
+    screen.fill((0, 0, 0))
+    draw_well(well)
+    draw_score(game_state.score)
+    draw_combo_bonus(combo_count)
+
+
+def clear_full_rows(well, full_rows, game_state, combo_count):
+    draw_level(well, game_state, combo_count)
     pygame.display.flip()
     pygame.time.wait(300)
     remove_full_rows(well, full_rows)
@@ -127,7 +143,22 @@ def handle_controls(event, tetromino_position, current_tetromino, well):
         "restart_loop": restart_loop,
     }
 
-def run(screen, game_state):
+
+def check_rows(well, combo_count, game_state):
+    full_rows = find_full_rows(well)
+    if full_rows:
+        clear_full_rows(well, full_rows, game_state, combo_count)
+        combo_count += 1  # Increment combo count
+        score_multiplier = 2 if combo_count > 1 else 1
+        game_state.add_score_by_lines(len(full_rows) * score_multiplier)
+    else:
+        combo_count = 0  # Reset combo count if no rows are cleared
+
+    return combo_count
+
+
+def run(game_state):
+    screen = Screen.getScreen()
     # Initialize the well
     well = [[0] * WELL_WIDTH for _ in range(WELL_DEPTH)]
 
@@ -135,6 +166,7 @@ def run(screen, game_state):
     tetromino_position = [0, 4]  # Starting position at the top center
 
     last_update_time = time.time()
+    combo_count = 0  # Initialize combo count
 
     while True:
         for event in pygame.event.get():
@@ -169,11 +201,8 @@ def run(screen, game_state):
                                 tetromino_position[1] + x
                             ] = current_tetromino[1]
 
-                # Check for full rows
-                full_rows = find_full_rows(well)
-                if full_rows:
-                    clear_full_rows(screen, well, full_rows, game_state)
-                    game_state.add_score_by_lines(len(full_rows))
+                # Check for full row and award points
+                combo_count = check_rows(well, combo_count, game_state)
 
                 # Choose the next tetromino
                 current_tetromino = random.choice(TETROMINOES)
@@ -185,7 +214,7 @@ def run(screen, game_state):
 
             last_update_time = current_time
 
-        draw_level(screen, well, game_state)
+        draw_level(well, game_state, combo_count)
 
         # Draw the current tetromino
         draw_tetromino(

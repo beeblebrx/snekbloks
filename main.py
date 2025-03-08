@@ -14,18 +14,17 @@ def quit_game():
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Snek Bloks")
 
     game_state = GameState()
     while True:
         match game_state.phase:
             case Phase.TITLE_SCREEN:
-                game_state.phase = title_screen.run(screen, game_state.phase)
+                game_state.phase = title_screen.run(game_state.phase)
             case Phase.PLAY:
-                game_state.phase = play.run(screen, game_state)
+                game_state.phase = play.run(game_state)
             case Phase.GAME_OVER:
-                game_state.phase = game_over.run(screen)
+                game_state.phase = game_over.run()
             case Phase.SCORE:
                 # Placeholder for score state logic
                 pass

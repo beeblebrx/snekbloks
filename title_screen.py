@@ -3,12 +3,14 @@ import time
 
 from constants import TETROMINOES, Phase
 from tools import draw_tetromino, rotate_shape, handle_events
+from screen import Screen
 
 TITLE_SCREEN_BLOCK_SIZE = 16
 GAP_SIZE = 20
 
 
-def run(screen, game_phase):
+def run(game_phase):
+    screen = Screen.getScreen()
     font = pygame.font.Font(None, 36)
     title = font.render("SNEK BLOKS", True, (255, 255, 255))
     title_rect = title.get_rect(center=(400, 300))

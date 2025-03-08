@@ -1,9 +1,11 @@
 import pygame
 from constants import Phase
 from tools import handle_events
+from screen import Screen
 
 
-def run(screen):
+def run():
+    screen = Screen.getScreen()
     font = pygame.font.Font(None, 74)
     text = font.render("GAME OVER", True, (255, 255, 255))
     text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
