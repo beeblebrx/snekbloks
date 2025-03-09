@@ -9,6 +9,8 @@ WELL_DEPTH = 20
 WELL_WIDTH = 10
 INTERVAL = 0.5
 
+next_tetrominoes = []
+
 
 def draw_well(well):
     screen = Screen.getScreen()
@@ -95,12 +97,28 @@ def draw_combo_bonus(combo_count):
         screen.blit(combo_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 50))
 
 
+def draw_next_tetromino():
+    screen = Screen.getScreen()
+    font = pygame.font.Font(None, 36)
+    next_text = font.render("Next:", True, (255, 255, 255))
+    screen.blit(next_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 90))
+
+    incoming_tetromino = next_tetrominoes[0]
+    draw_tetromino(
+        screen,
+        incoming_tetromino[0],
+        incoming_tetromino[1],
+        ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 130),
+    )
+
+
 def draw_level(well, game_state, combo_count):
     screen = Screen.getScreen()
     screen.fill((0, 0, 0))
     draw_well(well)
     draw_score(game_state.score)
     draw_combo_bonus(combo_count)
+    draw_next_tetromino()
 
 
 def clear_full_rows(well, full_rows, game_state, combo_count):
@@ -157,12 +175,29 @@ def check_rows(well, combo_count, game_state):
     return combo_count
 
 
+def fill_tetromino_buffer(buffer):
+    """
+    Pick a random tetromino and append it to the buffer until the buffer is three elements long.
+    If there would be three of the same tetromino in a row, pick a different one.
+    """
+    while len(buffer) < 3:
+        tetromino = random.choice(TETROMINOES)
+        if len(buffer) > 0 and buffer[-1] == tetromino:
+            continue
+        buffer.append(tetromino)
+    return buffer
+
+
 def run(game_state):
     screen = Screen.getScreen()
+    global next_tetrominoes
     # Initialize the well
     well = [[0] * WELL_WIDTH for _ in range(WELL_DEPTH)]
 
-    current_tetromino = random.choice(TETROMINOES)
+    # Initialie a buffer of tetrominoes
+    next_tetrominoes = fill_tetromino_buffer(next_tetrominoes)
+
+    current_tetromino = next_tetrominoes.pop(0)
     tetromino_position = [0, 4]  # Starting position at the top center
 
     last_update_time = time.time()
@@ -205,12 +240,14 @@ def run(game_state):
                 combo_count = check_rows(well, combo_count, game_state)
 
                 # Choose the next tetromino
-                current_tetromino = random.choice(TETROMINOES)
+                current_tetromino = next_tetrominoes.pop(0)
                 tetromino_position = [0, 4]
 
                 # Check if the new tetromino can fit in the well
                 if not can_move(well, current_tetromino[0], tetromino_position):
                     return Phase.GAME_OVER
+
+                next_tetrominoes = fill_tetromino_buffer(next_tetrominoes)
 
             last_update_time = current_time
 
