@@ -21,6 +21,8 @@ def rotate_shape(shape):
 
 
 def handle_events(event, game_phase):
+    if event is None:
+        return game_phase
     if event.type == pygame.QUIT:
         return Phase.QUIT
     elif event.type == pygame.KEYDOWN:

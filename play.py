@@ -7,7 +7,7 @@ from screen import Screen
 
 WELL_DEPTH = 20
 WELL_WIDTH = 10
-INTERVAL = 0.5
+INTERVAL = 0.1
 
 next_tetrominoes = []
 
@@ -134,34 +134,6 @@ def remove_full_rows(well, full_rows):
         well.insert(0, [0] * WELL_WIDTH)
 
 
-def handle_controls(event, tetromino_position, current_tetromino, well):
-    new_position = list(tetromino_position)
-    restart_loop = False
-    if event.key == pygame.K_LEFT:
-        new_position[1] -= 1
-    elif event.key == pygame.K_RIGHT:
-        new_position[1] += 1
-    elif event.key == pygame.K_SPACE:
-        new_position = drop_tetromino(well, current_tetromino, tetromino_position)
-    elif event.key == pygame.K_DOWN:
-        new_position[0] += 1
-    elif event.key == pygame.K_UP:
-        rotated_tetromino = rotate_shape(current_tetromino[0])
-        if can_move(well, rotated_tetromino, tetromino_position):
-            current_tetromino = (rotated_tetromino, current_tetromino[1])
-            restart_loop = True
-
-    if can_move(well, current_tetromino[0], new_position):
-        tetromino_position = new_position
-
-    return {
-        "new_position": new_position,
-        "tetromino_position": tetromino_position,
-        "current_tetromino": current_tetromino,
-        "restart_loop": restart_loop,
-    }
-
-
 def check_rows(well, combo_count, game_state):
     full_rows = find_full_rows(well)
     if full_rows:
@@ -188,68 +160,129 @@ def fill_tetromino_buffer(buffer):
     return buffer
 
 
+def start_new_round(
+    well, current_tetromino, tetromino_position, game_state, combo_count
+):
+    global next_tetrominoes
+    # Place the tetromino in the well
+    for y, row in enumerate(current_tetromino[0]):
+        for x, cell in enumerate(row):
+            if cell:
+                well[tetromino_position[0] + y][tetromino_position[1] + x] = (
+                    current_tetromino[1]
+                )
+
+    # Check for full row and award points
+    combo_count = check_rows(well, combo_count, game_state)
+
+    # Choose the next tetromino
+    current_tetromino = next_tetrominoes.pop(0)
+    tetromino_position = [0, 4]
+
+    # Check if the new tetromino can fit in the well
+    if not can_move(well, current_tetromino[0], tetromino_position):
+        return Phase.GAME_OVER, current_tetromino, tetromino_position, combo_count
+
+    next_tetrominoes = fill_tetromino_buffer(next_tetrominoes)
+    return None, current_tetromino, tetromino_position, combo_count
+
+
 def run(game_state):
     screen = Screen.getScreen()
     global next_tetrominoes
     # Initialize the well
     well = [[0] * WELL_WIDTH for _ in range(WELL_DEPTH)]
 
-    # Initialie a buffer of tetrominoes
+    # Initialize a buffer of tetrominoes
     next_tetrominoes = fill_tetromino_buffer(next_tetrominoes)
 
     current_tetromino = next_tetrominoes.pop(0)
     tetromino_position = [0, 4]  # Starting position at the top center
 
-    last_update_time = time.time()
+    last_update_time = time.time()  # Initialize to current time
     combo_count = 0  # Initialize combo count
+    level = 10  # Difficulty level
+    frame = 0  # Frame counter
+
+    tetromino_dropped = True  # Tracks if the tetromino was dropped. Set to true to prevent dropping on the first frame.
+    tetromino_rotated = False  # Tracks if the tetromino was rotated
 
     while True:
-        for event in pygame.event.get():
-            game_phase = handle_events(event, game_state.phase)
-            if game_phase != Phase.PLAY:
-                return game_phase
-            if event.type == pygame.KEYDOWN:
-                result = handle_controls(
-                    event, tetromino_position, current_tetromino, well
+        event = pygame.event.poll()
+        game_phase = handle_events(event, game_state.phase)
+        if game_phase != Phase.PLAY:
+            return game_phase
+
+        pressed_keys = pygame.key.get_pressed()
+
+        # Handle key events that should happen immediately between intervals.
+        if pressed_keys[pygame.K_SPACE]:
+            if not tetromino_dropped:
+                new_position = drop_tetromino(
+                    well, current_tetromino, tetromino_position
                 )
-                new_position = result["new_position"]
-                tetromino_position = result["tetromino_position"]
-                current_tetromino = result["current_tetromino"]
-                restart_loop = result["restart_loop"]
-                if restart_loop:
-                    continue
+                game_phase, current_tetromino, tetromino_position, combo_count = (
+                    start_new_round(
+                        well, current_tetromino, new_position, game_state, combo_count
+                    )
+                )
+                if game_phase == Phase.GAME_OVER:
+                    return game_phase
+                tetromino_dropped = True
+                continue
+
+        if pressed_keys[pygame.K_UP] and not tetromino_rotated:
+            rotated_tetromino = rotate_shape(current_tetromino[0])
+            if can_move(well, rotated_tetromino, tetromino_position):
+                current_tetromino = (rotated_tetromino, current_tetromino[1])
+                tetromino_rotated = True
+        if not pressed_keys[pygame.K_UP]:
+            tetromino_rotated = False
+        if not pressed_keys[pygame.K_SPACE]:
+            tetromino_dropped = False
 
         current_time = time.time()
-        if (
-            current_time - last_update_time > INTERVAL
-        ):  # Move tetromino down after interval
+        if current_time - last_update_time > INTERVAL:
             new_position = list(tetromino_position)
-            new_position[0] += 1
+
+            # Handle key events that should happen at intervals.
+            if pressed_keys[pygame.K_LEFT]:
+                if can_move(
+                    well, current_tetromino[0], [new_position[0], new_position[1] - 1]
+                ):
+                    new_position[1] -= 1
+            elif pressed_keys[pygame.K_RIGHT]:
+                if can_move(
+                    well, current_tetromino[0], [new_position[0], new_position[1] + 1]
+                ):
+                    new_position[1] += 1
+            elif pressed_keys[pygame.K_DOWN]:
+                if can_move(
+                    well, current_tetromino[0], [new_position[0] + 1, new_position[1]]
+                ):
+                    new_position[0] += 1
+
+            frame = (frame + 1) % 100
+
+            if frame % level == 0:
+                new_position[0] += 1
+
             if can_move(well, current_tetromino[0], new_position):
                 tetromino_position = new_position
             else:
-                # Place the tetromino in the well
-                for y, row in enumerate(current_tetromino[0]):
-                    for x, cell in enumerate(row):
-                        if cell:
-                            well[tetromino_position[0] + y][
-                                tetromino_position[1] + x
-                            ] = current_tetromino[1]
+                game_phase, current_tetromino, tetromino_position, combo_count = (
+                    start_new_round(
+                        well,
+                        current_tetromino,
+                        tetromino_position,
+                        game_state,
+                        combo_count,
+                    )
+                )
+                if game_phase == Phase.GAME_OVER:
+                    return game_phase
 
-                # Check for full row and award points
-                combo_count = check_rows(well, combo_count, game_state)
-
-                # Choose the next tetromino
-                current_tetromino = next_tetrominoes.pop(0)
-                tetromino_position = [0, 4]
-
-                # Check if the new tetromino can fit in the well
-                if not can_move(well, current_tetromino[0], tetromino_position):
-                    return Phase.GAME_OVER
-
-                next_tetrominoes = fill_tetromino_buffer(next_tetrominoes)
-
-            last_update_time = current_time
+            last_update_time = current_time  # Update last_update_time here
 
         draw_level(well, game_state, combo_count)
 
