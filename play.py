@@ -89,6 +89,12 @@ def draw_score(score):
     screen.blit(score_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 10))
 
 
+def draw_level_number(screen, game_state):
+    font = pygame.font.Font(None, 36)
+    level_text = font.render(f"Level: {game_state.level}", True, (255, 255, 255))
+    screen.blit(level_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 30))
+
+
 def draw_combo_bonus(combo_count):
     screen = Screen.getScreen()
     if combo_count > 1:
@@ -117,6 +123,7 @@ def draw_level(well, game_state, combo_count):
     screen.fill((0, 0, 0))
     draw_well(well)
     draw_score(game_state.score)
+    draw_level_number(screen, game_state)
     draw_combo_bonus(combo_count)
     draw_next_tetromino()
 
@@ -141,6 +148,7 @@ def check_rows(well, combo_count, game_state):
         combo_count += 1  # Increment combo count
         score_multiplier = 2 if combo_count > 1 else 1
         game_state.add_score_by_lines(len(full_rows) * score_multiplier)
+        game_state.add_cleared_lines(len(full_rows))
     else:
         combo_count = 0  # Reset combo count if no rows are cleared
 
@@ -188,8 +196,10 @@ def start_new_round(
 
 
 def run(game_state):
-    screen = Screen.getScreen()
     global next_tetrominoes
+
+    game_state.reset()
+    screen = Screen.getScreen()
     # Initialize the well
     well = [[0] * WELL_WIDTH for _ in range(WELL_DEPTH)]
 
@@ -201,7 +211,6 @@ def run(game_state):
 
     last_update_time = time.time()  # Initialize to current time
     combo_count = 0  # Initialize combo count
-    level = 10  # Difficulty level
     frame = 0  # Frame counter
 
     tetromino_dropped = True  # Tracks if the tetromino was dropped. Set to true to prevent dropping on the first frame.
@@ -264,7 +273,7 @@ def run(game_state):
 
             frame = (frame + 1) % 100
 
-            if frame % level == 0:
+            if frame % (10 - game_state.level + 1) == 0:
                 new_position[0] += 1
 
             if can_move(well, current_tetromino[0], new_position):
