@@ -95,9 +95,9 @@ def draw_level_number(screen, game_state):
     screen.blit(level_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 30))
 
 
-def draw_combo_bonus(combo_count):
+def draw_combo_bonus(game_state):
     screen = Screen.getScreen()
-    if combo_count > 1:
+    if game_state.combo_count > 1:
         font = pygame.font.Font(None, 36)
         combo_text = font.render("COMBO BONUS!", True, (255, 0, 0))
         screen.blit(combo_text, ((WELL_WIDTH + 2) * BLOCK_SIZE + 10, 50))
@@ -118,18 +118,18 @@ def draw_next_tetromino():
     )
 
 
-def draw_level(well, game_state, combo_count):
+def draw_level(well, game_state):
     screen = Screen.getScreen()
     screen.fill((0, 0, 0))
     draw_well(well)
     draw_score(game_state.score)
     draw_level_number(screen, game_state)
-    draw_combo_bonus(combo_count)
+    draw_combo_bonus(game_state)
     draw_next_tetromino()
 
 
-def clear_full_rows(well, full_rows, game_state, combo_count):
-    draw_level(well, game_state, combo_count)
+def clear_full_rows(well, full_rows, game_state):
+    draw_level(well, game_state)
     pygame.display.flip()
     pygame.time.wait(300)
     remove_full_rows(well, full_rows)
@@ -141,18 +141,16 @@ def remove_full_rows(well, full_rows):
         well.insert(0, [0] * WELL_WIDTH)
 
 
-def check_rows(well, combo_count, game_state):
+def check_rows(well, game_state):
     full_rows = find_full_rows(well)
     if full_rows:
-        clear_full_rows(well, full_rows, game_state, combo_count)
-        combo_count += 1  # Increment combo count
-        score_multiplier = 2 if combo_count > 1 else 1
-        game_state.add_score_by_lines(len(full_rows) * score_multiplier)
-        game_state.add_cleared_lines(len(full_rows))
+        clear_full_rows(well, full_rows, game_state)
+        game_state.combo_count += 1  # Increment combo count
+        num_rows = len(full_rows)
+        game_state.add_score_by_lines(num_rows)
+        game_state.add_cleared_lines(num_rows)
     else:
-        combo_count = 0  # Reset combo count if no rows are cleared
-
-    return combo_count
+        game_state.combo_count = 0  # Reset combo count if no rows are cleared
 
 
 def fill_tetromino_buffer(buffer):
@@ -168,9 +166,7 @@ def fill_tetromino_buffer(buffer):
     return buffer
 
 
-def start_new_round(
-    well, current_tetromino, tetromino_position, game_state, combo_count
-):
+def start_new_round(well, current_tetromino, tetromino_position, game_state):
     global next_tetrominoes
     # Place the tetromino in the well
     for y, row in enumerate(current_tetromino[0]):
@@ -181,7 +177,7 @@ def start_new_round(
                 )
 
     # Check for full row and award points
-    combo_count = check_rows(well, combo_count, game_state)
+    check_rows(well, game_state)
 
     # Choose the next tetromino
     current_tetromino = next_tetrominoes.pop(0)
@@ -189,10 +185,10 @@ def start_new_round(
 
     # Check if the new tetromino can fit in the well
     if not can_move(well, current_tetromino[0], tetromino_position):
-        return Phase.GAME_OVER, current_tetromino, tetromino_position, combo_count
+        return Phase.GAME_OVER, current_tetromino, tetromino_position
 
     next_tetrominoes = fill_tetromino_buffer(next_tetrominoes)
-    return None, current_tetromino, tetromino_position, combo_count
+    return None, current_tetromino, tetromino_position
 
 
 def run(game_state):
@@ -210,7 +206,6 @@ def run(game_state):
     tetromino_position = [0, 4]  # Starting position at the top center
 
     last_update_time = time.time()  # Initialize to current time
-    combo_count = 0  # Initialize combo count
     frame = 0  # Frame counter
 
     tetromino_dropped = True  # Tracks if the tetromino was dropped. Set to true to prevent dropping on the first frame.
@@ -230,10 +225,8 @@ def run(game_state):
                 new_position = drop_tetromino(
                     well, current_tetromino, tetromino_position
                 )
-                game_phase, current_tetromino, tetromino_position, combo_count = (
-                    start_new_round(
-                        well, current_tetromino, new_position, game_state, combo_count
-                    )
+                game_phase, current_tetromino, tetromino_position = start_new_round(
+                    well, current_tetromino, new_position, game_state
                 )
                 if game_phase == Phase.GAME_OVER:
                     return game_phase
@@ -279,21 +272,18 @@ def run(game_state):
             if can_move(well, current_tetromino[0], new_position):
                 tetromino_position = new_position
             else:
-                game_phase, current_tetromino, tetromino_position, combo_count = (
-                    start_new_round(
-                        well,
-                        current_tetromino,
-                        tetromino_position,
-                        game_state,
-                        combo_count,
-                    )
+                game_phase, current_tetromino, tetromino_position = start_new_round(
+                    well,
+                    current_tetromino,
+                    tetromino_position,
+                    game_state,
                 )
                 if game_phase == Phase.GAME_OVER:
                     return game_phase
 
             last_update_time = current_time  # Update last_update_time here
 
-        draw_level(well, game_state, combo_count)
+        draw_level(well, game_state)
 
         # Draw the current tetromino
         draw_tetromino(

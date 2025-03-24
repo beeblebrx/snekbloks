@@ -7,9 +7,11 @@ class GameState:
         self.score = 0
         self.level = 1
         self.lines_cleared = 0
+        self.combo_count = 0
 
     def add_score_by_lines(self, lines):
-        self.score += 10 * 2 ** (lines - 1)
+        score_multiplier = 2 if self.combo_count > 1 else 1
+        self.score += (10 * 2 ** (lines - 1)) * score_multiplier
 
     def add_cleared_lines(self, lines):
         self.lines_cleared += lines
@@ -27,3 +29,4 @@ class GameState:
         self.score = 0
         self.level = 1
         self.lines_cleared = 0
+        self.combo_count = 0
