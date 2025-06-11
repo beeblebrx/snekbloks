@@ -2,7 +2,7 @@
 
 ## Description
 
-A pygame Tetris clone. Just a title screen right now...
+A pygame Tetris clone.
 
 ## Setup
 
@@ -29,7 +29,3 @@ To set up the project, follow these steps:
    ```sh
    pip install -r requirements.txt
    ```
-
-## Usage
-
-Instructions on how to use your project.
